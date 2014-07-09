@@ -1,0 +1,141 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <title>WebRTC API Demo</title>
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+    <style>
+        html, body {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        body {
+            color: #222;
+            background: #e5e5e5;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            font-size: 130%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        h1, h2 {
+            font-weight: 300;
+        }
+        #target, #send {
+            color: #222;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            font-size: 100%;
+        }
+    </style>
+</head>
+<body>
+<h1>Webrtc demo</h1>
+<h2>by ernado</h2>
+<div>Your id: <span id="user-id" /></div>
+<div>Target: <input id="target" size="8" /></div>
+<div><button value="send" id="send">send</button></div>
+<script type="text/javascript" src="/static/js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="/static/js/adapter.js"></script>
+<script>
+    var cfg = {"iceServers": [{"url": "turn:cydev.ru"}, {"url": "stun:cydev.ru"}]}
+    var connection = new WebSocket('ws://' + window.location.host + '/realtime');
+    var id;
+    var target;
+    var peerConnection;
+
+    connection.onmessage = function (e) {
+        try {
+            var signal = JSON.parse(e.data);
+        } catch (e) {
+            console.log(e);
+            return
+        }
+        console.log(e.data);
+        if (signal.description) {
+            console.log('got remote description');
+            var description = new RTCSessionDescription(signal.description);
+            peerConnection.setRemoteDescription(description);
+        }
+        if (signal.candidate) {
+            console.log('got remote candidate');
+            peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        }
+        if (signal.id) {
+            id = signal.id;
+            console.log('your id', id);
+            document.getElementById("user-id").innerHTML = id;
+        }
+    }
+    
+    function onIceCandidate(event) {
+        if (event.candidate) {
+            console.log("new candidate");
+            var data = JSON.stringify({"candidate": event.candidate})
+            connection.send(data);
+        } 
+    }
+
+    function onSessionConnecting(event) {
+        console.log("session connecting");
+    }
+
+    function onSessionOpened(event) {
+        console.log("session connection opened");
+    }
+
+    function createPeerConnection (config) {
+        var conn;
+        try {
+            conn = new RTCPeerConnection(config, {optional: [{RtpDataChannels: true}]});
+            conn.onicecandidate = onIceCandidate;
+            console.log("created rtc connection with config", config);
+        } catch (e) {
+            console.log("failed to create peer connection:", e)
+            return
+        };
+        conn.onconnecting = onSessionConnecting;
+        conn.onopen = onSessionOpened;
+        return conn
+    }
+
+    function create() {
+        if (typeof peerConnection === 'undefined') {
+            peerConnection = createPeerConnection(cfg);
+        }
+        if (typeof sendChannel === 'undefined') {
+            sendChannel = peerConnection.createDataChannel("sendDataChannel", {reliable: false});
+        }
+        peerConnection.createOffer(function(offer) {
+            console.log('creating offer');
+            var description = new RTCSessionDescription(offer);
+            peerConnection.setLocalDescription(description, function() {
+                console.log('local description set');
+                var data = JSON.stringify({"description": description})
+                connection.send(data);
+            });
+        });
+    }
+    create();
+    $('#target').on('keydown', function(e){
+        if (e.which == 13) {
+            target = $(this).val().toLowerCase();
+            console.log("target", target);
+            var data = JSON.stringify({"target": target});
+            connection.send(data);
+            create();
+        }
+    });
+    $('#send').click(function(){
+        sendChannel.send('hello');
+    })
+</script>
+</body>
+</html>
