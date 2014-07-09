@@ -41,12 +41,14 @@ type Target struct {
 
 func Translate() {
 	for message := range messages {
-		log.Println("message for", message.ID)
 		conn, ok := connections[message.ID]
 		if !ok {
-			log.Println(message.ID, "not found")
+			if message.ID != "" {
+				log.Println(message.ID, "not found")
+			}
 			continue
 		}
+		log.Println("message for", message.ID)
 		conn.WriteJSON(message.Body)
 	}
 }
