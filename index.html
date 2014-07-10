@@ -45,7 +45,8 @@
 <script type="text/javascript" src="/static/js/jquery-2.1.1.min.js"></script>
 <script type="text/javascript" src="/static/js/adapter.js"></script>
 <script>
-    var cfg = {iceServers: [{"url": "turn:cydev.ru"}, {"url": "stun:cydev.ru"}]}
+    var cfg = {iceServers: [{"url": "turn:test@cydev.ru"}, {"url": "stun:cydev.ru"}]}
+    // cfg = {iceServers: [{"url": "stun:cydev.ru"}]}
     var connection = new WebSocket('ws://' + window.location.host + '/realtime');
     var id;
     var target;
