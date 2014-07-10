@@ -57,10 +57,12 @@
             console.log(data);
         };
         channel.onopen = function () {
+            console.log('data channel opened');
             channel.push = channel.send;
             channel.send = function (data) {
                 channel.push(JSON.stringify(data));
             };
+            channel.send({"id": id});
         };
 
         channel.onerror = function (e) {
