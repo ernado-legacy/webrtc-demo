@@ -39,6 +39,10 @@ type Target struct {
 	Target string `json:"target"`
 }
 
+type Offer struct {
+	Offer interface{} `json:"offer"`
+}
+
 func Translate() {
 	for message := range messages {
 		conn, ok := connections[message.ID]
@@ -61,7 +65,7 @@ func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	b := make([]byte, 4)
+	b := make([]byte, 2)
 	rand.Read(b)
 	id := hex.EncodeToString(b)
 
@@ -80,19 +84,33 @@ func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			break
 		}
 		var m map[string]interface{}
+		var t string
 		json.Unmarshal(message, &m)
 		if v, ok := m["target"]; ok {
 			target = v.(string)
-			log.Println("got target", target)
+			t = "target"
+			messages <- Message{ID: target, Body: Target{id}}
 		}
 		if _, ok := m["description"]; ok {
-			log.Println("got description")
+			t = "description"
 			messages <- Message{ID: target, Body: m}
 		}
 		if _, ok := m["candidate"]; ok {
-			log.Println("got candidate")
+			t = "candidate"
 			messages <- Message{ID: target, Body: m}
 		}
+		if _, ok := m["offer"]; ok {
+			t = "offer"
+			messages <- Message{ID: target, Body: m}
+		}
+		if _, ok := m["answer"]; ok {
+			t = "answer"
+			messages <- Message{ID: target, Body: m}
+		}
+		if t == "" {
+			log.Println("unknown message", m)
+		}
+		log.Printf("[%s] %s -> %s", t, id, target)
 	}
 
 }
