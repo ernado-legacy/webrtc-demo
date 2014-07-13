@@ -1,0 +1,5 @@
+FROM cydev/go
+RUN v=VERSION go get -u -v github.com/ernado/webrtc-demo
+EXPOSE 5555
+WORKDIR /go/src/github.com/ernado/webrtc-demo
+ENTRYPOINT ["webrtc-demo"]
