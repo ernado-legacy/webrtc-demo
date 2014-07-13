@@ -56,7 +56,7 @@
     var id;
     var target;
     var answererDataChannel, offererDataChannel;
-
+    var room;
     var logger = $('#log');
     function log(data) {
         for (var i = 0; i < arguments.length; i++) {
@@ -67,6 +67,10 @@
 
     log('demo init');
 
+    $(function(){
+        room = window.location.pathname.split('/')[2]
+        log('room', room);            
+    })
     function setChannelEvents(channel) {
         channel.onmessage = function (event) {
             var data = JSON.parse(event.data);
@@ -191,6 +195,9 @@
         if (signal.id) {
             id = signal.id;
             log('your id', id);
+            var data = JSON.stringify({"room": room})
+            connection.send(data);            
+            log('sent room info')
             document.getElementById("user-id").innerHTML = id;
         }
         if (signal.target && target != signal.target) {
@@ -198,6 +205,12 @@
             log('got new target', signal.target);
             connection.send(JSON.stringify(signal));
             $('#target').val(target);
+        }
+        if (signal.client) {
+            log("client", signal.client)
+        }
+        if (signal.dead) {
+            log("dead", signal.dead)
         }
     }
     
