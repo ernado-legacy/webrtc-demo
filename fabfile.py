@@ -17,3 +17,4 @@ def update():
         run('docker stop webrtc')
         run('docker rm webrtc')
         run('docker run -d --name webrtc cydev/webrtc')
+        run('docker restart nginx')
