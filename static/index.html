@@ -53,8 +53,8 @@
 <div>Target: <input id="target" size="4" /></div>
 <div><button value="send" id="send">send</button></div>
 <div id="log"></div>
-<script type="text/javascript" src="//yandex.st/jquery/2.1.1/jquery.min.js"></script>
-<script type="text/javascript" src="//24827.selcdn.ru/cydev/adapter.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="//24827.selcdn.ru/cydev/adapter.js"></script>
 <script>
     var cfg = {iceServers: [{"url": "turn:stun.cydev.ru"}, {"url": "stun:stun.cydev.ru"}]}
     var connection = new WebSocket('ws://' + window.location.host + '/realtime');
