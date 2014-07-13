@@ -72,8 +72,8 @@ func (room *Room) Start() {
 				if k == client.ID {
 					continue
 				}
-				go v.Send(map[string]string{"client": client.ID})
-				go client.Send(map[string]string{"client": k})
+				v.Send(map[string]string{"client": client.ID, "init": client.ID})
+				client.Send(map[string]string{"client": k})
 			}
 		}
 
@@ -136,7 +136,6 @@ func Translate() {
 }
 
 func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var target string
 	var id string
 	var room *Room
 	cookie, err := r.Cookie("id")
@@ -170,32 +169,34 @@ func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		}
 		var m map[string]interface{}
 		var t string
+		var destination string
 		json.Unmarshal(message, &m)
-		if v, ok := m["target"]; ok {
-			target = v.(string)
-			t = "target"
-			messages <- Message{ID: target, Body: Target{id}}
+		// reversing id
+		destinationRaw, ok := m["to"]
+		if ok {
+			m["from"] = id
+			destination = destinationRaw.(string)
 		}
+		msg := Message{destination, m}
 		if v, ok := m["description"]; ok {
 			t = "description"
 			d := Description{v}
 			log.Println("description", d)
-			messages <- Message{ID: target, Body: m}
+			messages <- msg
 		}
 		if v, ok := m["candidate"]; ok {
 			t = "candidate"
 			candidate := Candidate{v}
 			log.Println(t, candidate)
-			messages <- Message{ID: target, Body: m}
+			messages <- msg
 		}
 		if _, ok := m["offer"]; ok {
 			t = "offer"
-
-			messages <- Message{ID: target, Body: m}
+			messages <- msg
 		}
 		if _, ok := m["answer"]; ok {
 			t = "answer"
-			messages <- Message{ID: target, Body: m}
+			messages <- msg
 		}
 		if v, ok := m["room"]; ok {
 			log.Println("got room")
@@ -212,7 +213,7 @@ func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if t == "" {
 			log.Println("unknown message", m)
 		}
-		log.Printf("[%s] %s -> %s", t, id, target)
+		log.Printf("[%s] %s -> %s", t, id, destination)
 	}
 
 }
