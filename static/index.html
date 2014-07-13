@@ -34,31 +34,51 @@
             text-transform: uppercase;
             font-size: 100%;
         }
+
+        #log {
+            width: 80%;
+            background-color: #000000;
+            color: #00FF00;
+            heigth: 100px;
+            font-family: monospace;
+            padding: 3px;
+            font-size: 80%;
+        }
     </style>
 </head>
 <body>
 <h1>Webrtc demo</h1>
 <h2>by ernado</h2>
 <div>Your id: <span id="user-id" /></div>
-<div>Target: <input id="target" size="8" /></div>
+<div>Target: <input id="target" size="4" /></div>
 <div><button value="send" id="send">send</button></div>
+<div id="log"></div>
 <script type="text/javascript" src="//yandex.st/jquery/2.1.1/jquery.min.js"></script>
 <script type="text/javascript" src="//24827.selcdn.ru/cydev/adapter.js"></script>
 <script>
     var cfg = {iceServers: [{"url": "turn:stun.cydev.ru"}, {"url": "stun:stun.cydev.ru"}]}
-    // cfg = {iceServers: [{"url": "stun:cydev.ru"}]}
     var connection = new WebSocket('ws://' + window.location.host + '/realtime');
     var id;
     var target;
     var answererDataChannel, offererDataChannel;
 
+    var logger = $('#log');
+    function log(data) {
+        for (var i = 0; i < arguments.length; i++) {
+            logger.append(arguments[i] + ' ');
+        }
+        logger.append('<br>');
+    }
+
+    log('demo init');
+
     function setChannelEvents(channel) {
         channel.onmessage = function (event) {
             var data = JSON.parse(event.data);
-            console.log(data);
+            log(data);
         };
         channel.onopen = function () {
-            console.log('data channel opened');
+            log('data channel opened');
             channel.push = channel.send;
             channel.send = function (data) {
                 channel.push(JSON.stringify(data));
@@ -77,7 +97,7 @@
 
     var Offerer = {
         createOffer: function () {
-            console.log('creating offer');
+            log('creating offer');
             var peer = new RTCPeerConnection(cfg);
 
             offererDataChannel = peer.createDataChannel('channel', {});
@@ -85,14 +105,14 @@
 
             peer.onicecandidate = function (event) {
                 if (event.candidate) {
-                    console.log('sending candidate');
+                    log('sending candidate');
                     var data = JSON.stringify({"candidate": event.candidate})
                     connection.send(data);
                 }
             };
 
             peer.createOffer(function (sdp) {
-                console.log('sending sdp');
+                log('sending sdp');
                 peer.setLocalDescription(sdp);
                 var data = JSON.stringify({"offer": sdp})
                 connection.send(data);
@@ -115,7 +135,7 @@
 
     var Answerer = {
         createAnswer: function (offerSDP) {
-            console.log('creating answerer');
+            log('creating answerer');
             var peer = new RTCPeerConnection(cfg);
             peer.ondatachannel = function (event) {
                 answererDataChannel = event.channel;
@@ -124,7 +144,7 @@
 
             peer.onicecandidate = function (event) {
                 if (event.candidate) {
-                    console.log('sending answer candidate')
+                    log('sending answer candidate')
                     var data = JSON.stringify({"candidate": event.candidate})
                     connection.send(data);
                 }
@@ -133,7 +153,7 @@
             peer.setRemoteDescription(new RTCSessionDescription(offerSDP));
             peer.createAnswer(function (sdp) {
                 peer.setLocalDescription(sdp);
-                console.log('sending answer');  
+                log('sending answer');  
                 var data = JSON.stringify({"answer": sdp})
                 connection.send(data);
             });
@@ -162,25 +182,25 @@
         }
         console.log("signal", signal);
         if (signal.offer) {
-            console.log('got offer');
+            log('got offer');
             answerer = Answerer.createAnswer(signal.offer);
         }
         if (signal.answer) {
-            console.log('got answer');
+            log('got answer');
             offerer.setRemoteDescription(signal.answer);
         }
         if (signal.candidate) {
-            console.log('got remote candidate');
+            log('got remote candidate');
             (answerer || offerer).addIceCandidate(signal.candidate);
         }
         if (signal.id) {
             id = signal.id;
-            console.log('your id', id);
+            log('your id', id);
             document.getElementById("user-id").innerHTML = id;
         }
         if (signal.target && target != signal.target) {
             target = signal.target;
-            console.log('got new target', signal.target);
+            log('got new target', signal.target);
             connection.send(JSON.stringify(signal));
             $('#target').val(target);
         }
@@ -189,7 +209,7 @@
     $('#target').on('keydown', function(e){
         if (e.which == 13) {
             target = $(this).val().toLowerCase();
-            console.log("target", target);
+            log("target", target);
             var data = JSON.stringify({"target": target});
             connection.send(data);
             offerer = Offerer.createOffer();

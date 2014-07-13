@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -115,10 +116,21 @@ func Realtime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 }
 
+func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	indexTemplate, err := template.ParseFiles("static/index.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	data := make(map[string]interface{})
+	indexTemplate.Execute(w, data)
+}
+
 func main() {
 	router := httprouter.New()
-	router.ServeFiles("/static/*filepath", http.Dir("."))
+	router.ServeFiles("/static/*filepath", http.Dir("static"))
 	router.GET("/realtime", Realtime)
+	router.GET("/", Index)
 	go Translate()
 	log.Println("listening on :5555")
 	log.Fatal(http.ListenAndServe(":5555", router))
