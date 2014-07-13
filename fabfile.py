@@ -1,7 +1,7 @@
 from fabric.api import run, local, env, cd
 
 
-env.hosts = ['root@msk2.cydev.ru:122']
+env.hosts = ['root@msk2.cydev.ru']
 root = '/src/webrtc-demo'
 
 
